@@ -13,7 +13,7 @@ crons = ["0 23,4,10 * * *"]
 # 先執行：npx wrangler kv namespace create WX_KV  ，再把印出的 id 貼到這裡
 [[kv_namespaces]]
 binding = "WX_KV"
-id = "REPLACE_WITH_KV_ID"
+id = "fb05a48007534c9eb15d74d8ee400181"
 
 # 金鑰請用 wrangler secret put 設定，不要寫在這個檔案：
 #   CWA_API_KEY、ANTHROPIC_API_KEY、REFRESH_TOKEN（選填）
