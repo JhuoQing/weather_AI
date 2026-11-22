@@ -80,7 +80,7 @@ button:focus-visible, .scroll:focus-visible { outline: 3px dashed var(--ink); ou
 .lines { display: flex; flex-direction: column; }
 .line { font-size: 16px; line-height: 1.7; font-weight: 500; padding: 10px 0; border-bottom: 2px dashed var(--ink); }
 .note-foot { font-size: 12px; line-height: 1.6; margin-top: auto; }
-.note.loading .note-main, .note.loading .lines { opacity: .45; }
+
 
 /* 逐時 + 一週 */
 .block { display: flex; flex-direction: column; gap: 14px; }

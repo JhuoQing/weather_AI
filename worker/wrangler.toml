@@ -3,11 +3,17 @@ main = "src/index.js"
 compatibility_date = "2025-01-01"
 
 [vars]
-# 允許呼叫的網頁來源（只寫網域，不含路徑）。多個用逗號分隔。
-# 本機測試用 http://localhost:8000 。
 ALLOWED_ORIGIN = "https://jhuoqing.github.io,http://localhost:8000"
-# 使用的模型。想換更強或更省的模型，改這裡即可。
 MODEL = "claude-haiku-5-5"
 
-# 金鑰不要寫在這個檔案。請用指令存成 Secret：
-#   npx wrangler secret put ANTHROPIC_API_KEY
+# 台灣時間 07:00、12:00、18:00 更新（Cloudflare 以 UTC 計時）
+[triggers]
+crons = ["0 23,4,10 * * *"]
+
+# 先執行：npx wrangler kv namespace create WX_KV  ，再把印出的 id 貼到這裡
+[[kv_namespaces]]
+binding = "WX_KV"
+id = "REPLACE_WITH_KV_ID"
+
+# 金鑰請用 wrangler secret put 設定，不要寫在這個檔案：
+#   CWA_API_KEY、ANTHROPIC_API_KEY、REFRESH_TOKEN（選填）
