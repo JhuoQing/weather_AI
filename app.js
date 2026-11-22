@@ -256,6 +256,7 @@
       a = ruleAdvice(c, state.mode);
       src = 'AI 建議準備中，先顯示內建規則建議。每天 7:00、12:00、18:00 更新。';
     }
+    document.querySelector('.note').setAttribute('data-mode', state.mode);
     $('aiHead').textContent = a.head;
     var box = $('aiTips'); box.textContent = '';
     a.tips.forEach(function (t) { box.appendChild(el('div', 'line', t)); });

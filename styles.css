@@ -174,6 +174,16 @@ button:focus-visible, .scroll:focus-visible { outline: 3px dashed var(--ink); ou
   .foot { font-size: 12px; }
 }
 
+/* AI 說明卡背後的淡淡圖案（只是裝飾，不影響文字） */
+.note { position: relative; overflow: hidden; isolation: isolate; }
+.note::before { content: ""; position: absolute; right: -14px; bottom: -14px; width: 190px; height: 190px; z-index: -1; pointer-events: none; opacity: .13; background: no-repeat center / contain; }
+.note[data-mode="outfit"]::before { background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 120%22 fill=%22none%22 stroke=%22%232B2A33%22 stroke-width=%224%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M38 20 L18 34 L28 52 L40 46 L40 100 L80 100 L80 46 L92 52 L102 34 L82 20 Q60 36 38 20 Z%22/%3E%3C/svg%3E"); }
+.note[data-mode="commute"]::before { background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 120%22 fill=%22none%22 stroke=%22%232B2A33%22 stroke-width=%224%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%2218%22 y=%2220%22 width=%2284%22 height=%2268%22 rx=%2212%22/%3E%3Crect x=%2228%22 y=%2232%22 width=%2264%22 height=%2226%22 rx=%224%22/%3E%3Cpath d=%22M18 68 H102%22/%3E%3Ccircle cx=%2238%22 cy=%2298%22 r=%228%22/%3E%3Ccircle cx=%2282%22 cy=%2298%22 r=%228%22/%3E%3Ccircle cx=%2234%22 cy=%2278%22 r=%223%22/%3E%3Ccircle cx=%2286%22 cy=%2278%22 r=%223%22/%3E%3C/svg%3E"); }
+.note[data-mode="sport"]::before { background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 120%22 fill=%22none%22 stroke=%22%232B2A33%22 stroke-width=%224%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2240%22/%3E%3Cpath d=%22M20 60 H100 M60 20 V100 M31 30 Q50 60 31 90 M89 30 Q70 60 89 90%22/%3E%3C/svg%3E"); }
+.note[data-mode="laundry"]::before { background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 120%22 fill=%22none%22 stroke=%22%232B2A33%22 stroke-width=%224%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%2222%22 y=%2214%22 width=%2276%22 height=%2292%22 rx=%2210%22/%3E%3Cpath d=%22M22 36 H98%22/%3E%3Ccircle cx=%2260%22 cy=%2270%22 r=%2224%22/%3E%3Cpath d=%22M42 70 Q51 62 60 70 T78 70%22/%3E%3Ccircle cx=%2236%22 cy=%2225%22 r=%223%22/%3E%3Ccircle cx=%2248%22 cy=%2225%22 r=%223%22/%3E%3C/svg%3E"); }
+.note[data-mode="trip"]::before { background-image: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 120%22 fill=%22none%22 stroke=%22%232B2A33%22 stroke-width=%224%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M10 94 L44 40 L62 68 L74 52 L110 94 Z%22/%3E%3Ccircle cx=%2290%22 cy=%2226%22 r=%2211%22/%3E%3Cpath d=%22M90 6 V10 M110 26 H106 M70 26 H74%22/%3E%3C/svg%3E"); }
+@media (max-width: 560px) { .note::before { width: 130px; height: 130px; right: -10px; bottom: -10px; } }
+
 /* 切換縣市的過場動畫 */
 .now, .ai, .block { transition: opacity .16s ease, transform .16s ease; }
 body.swap-out .now, body.swap-out .ai, body.swap-out .block { opacity: .25; transform: translateY(6px); }
