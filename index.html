@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今日天氣手帳</title>
+<meta name="description" content="選縣市，看天氣，還有 AI 幫你整理穿搭、通勤、運動、洗衣、出遊建議。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Fredoka:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="page">
+
+  <header class="top">
+    <div class="top-left">
+      <div class="sticker title"><h1>今日天氣手帳</h1></div>
+      <div class="sticker stamp" id="stamp">載入中…</div>
+    </div>
+    <div class="picker">
+      <div class="picker-row">
+        <span class="picker-label" id="pickerLabel">地點</span>
+        <button class="city-btn" id="cityBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="cityPanel" aria-labelledby="pickerLabel cityBtn">
+          <span><span id="cityName">台北市</span><small id="regionName">北部</small></span>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 6 L8 11 L13 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="hint">下次打開會自動帶入你上次選的縣市</div>
+      <div class="panel" id="cityPanel" role="group" aria-label="選擇縣市" hidden></div>
+    </div>
+  </header>
+
+  <div class="status" id="status" role="status" aria-live="polite" hidden></div>
+
+  <main class="main">
+    <section class="card now" aria-labelledby="nowTitle">
+      <div class="now-head">
+        <h2 id="nowTitle">台北市</h2>
+        <span class="tag" id="nowRegion">北部</span>
+      </div>
+      <div class="now-body">
+        <div class="now-icon" id="nowIcon"></div>
+        <div class="now-text">
+          <div class="temp" id="nowTemp">--°</div>
+          <div class="sky" id="nowSky">--</div>
+          <div class="range" id="nowRange"></div>
+        </div>
+      </div>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="ai" aria-labelledby="aiTitle">
+      <div class="tabs" id="tabs" role="group" aria-label="想看哪方面的建議"></div>
+      <div class="note">
+        <div class="note-head">
+          <span class="badge">AI</span>
+          <span id="aiTitle">給 台北市 的專屬建議</span>
+        </div>
+        <div class="note-main" id="aiHead" aria-live="polite">—</div>
+        <div class="lines" id="aiTips"></div>
+        <div class="note-foot" id="aiSource"></div>
+      </div>
+    </section>
+  </main>
+
+  <section class="block" aria-labelledby="hoursTitle">
+    <h3 class="label sky-bg"><span id="hoursTitle">今天接下來</span></h3>
+    <div class="scroll" id="hours" tabindex="0" aria-label="未來 12 小時"></div>
+  </section>
+
+  <section class="block" aria-labelledby="weekTitle">
+    <h3 class="label pink-bg"><span id="weekTitle">這一週</span></h3>
+    <div class="week" id="week"></div>
+  </section>
+
+  <footer class="foot">天氣資料：Open-Meteo。AI 建議僅供生活參考，出門前請以中央氣象署公布的預報與警特報為準。</footer>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
