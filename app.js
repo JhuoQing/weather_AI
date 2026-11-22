@@ -300,21 +300,32 @@
   }
   function choose(i) {
     state.ci = i; store(KEY_CITY, CITIES[i][0]);
-    openPanel(false); $('cityBtn').focus(); loadCity();
+    openPanel(false); $('cityBtn').focus(); loadCity(true);
   }
 
   /* ---------- 主流程 ---------- */
-  function loadCity() {
-    var city = CITIES[state.ci], idx = state.ci;
+  function loadCity(animate) {
+    var city = CITIES[state.ci], idx = state.ci, body = document.body, t0 = Date.now();
     $('cityName').textContent = city[0]; $('regionName').textContent = REGIONS[city[1]];
+    body.classList.remove('swap-in');
+    if (animate) body.classList.add('swap-out');
     setStatus('正在讀取 ' + city[0] + ' 的天氣…');
     fetchCity(city[0]).then(function (raw) {
       if (idx !== state.ci) return;
-      state.data = normalize(city[0], raw);
-      setStatus('');
-      renderNow(state.data); renderStats(state.data); renderHours(state.data); renderWeek(state.data); renderAdvice();
+      var data = normalize(city[0], raw);
+      // 讓淡出動畫至少播完（約 0.16 秒）再換內容
+      var wait = animate ? Math.max(0, 170 - (Date.now() - t0)) : 0;
+      setTimeout(function () {
+        if (idx !== state.ci) return;
+        state.data = data;
+        setStatus('');
+        renderNow(data); renderStats(data); renderHours(data); renderWeek(data); renderAdvice();
+        body.classList.remove('swap-out'); void body.offsetWidth; body.classList.add('swap-in');
+        setTimeout(function () { if (idx === state.ci) body.classList.remove('swap-in'); }, 900);
+      }, wait);
     }).catch(function (e) {
       if (idx !== state.ci) return;
+      body.classList.remove('swap-out');
       var m = e && e.message;
       setStatus(m === 'no_api' ? '還沒有設定天氣服務網址（請在 config.js 填入 API_BASE）。'
         : m === 'no_data' ? '天氣資料還在準備中，請稍後再試。資料每天 7:00、12:00、18:00 更新。'
