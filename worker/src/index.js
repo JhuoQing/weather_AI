@@ -157,9 +157,13 @@ async function askClaude(env, c, budget) {
 }
 
 /* ---------- 定時更新 ---------- */
+const SIX = ['臺北市', '新北市', '桃園市', '臺中市', '臺南市', '高雄市'];
+function parseOnly(v) { return !v ? null : v === '六都' ? SIX : v.split(',').map((x) => x.trim()).filter(Boolean); }
+
 // onlyMissing：只替還沒有 AI 建議的縣市補上，適合第一次部署後補跑
 export async function refresh(env, opts) {
   const onlyMissing = !!(opts && opts.onlyMissing);
+  const only = opts && opts.only && opts.only.length ? opts.only.map(toCwa) : null;
   if (!env.CWA_API_KEY) throw new Error('missing_CWA_API_KEY');
   const [l3, l7] = await Promise.all([fetchCwa(DATA_3DAY, env.CWA_API_KEY), fetchCwa(DATA_7DAY, env.CWA_API_KEY)]);
   const find = (list, n) => list.find((l) => l.LocationName === toCwa(n) || l.LocationName === n);
@@ -177,7 +181,7 @@ export async function refresh(env, opts) {
   await env.WX_KV.put('snapshot', JSON.stringify(snap)); // 先存天氣，AI 失敗也不影響天氣顯示
 
   if (!env.ANTHROPIC_API_KEY) return { weather: Object.keys(cities).length, ai: 0, errors: { missing_ANTHROPIC_API_KEY: 1 } };
-  const names = Object.keys(cities).filter((n) => !(onlyMissing && cities[n].ai));
+  const names = Object.keys(cities).filter((n) => (!only || only.includes(n)) && !(onlyMissing && cities[n].ai));
   const errors = {};
   const budget = { left: 38 }; // Worker 單次執行的子請求上限（免費方案 50）
   let ok = 0, i = 0;
@@ -230,7 +234,7 @@ export default {
     // 部署後手動更新一次：POST /api/refresh，帶 Authorization: Bearer <REFRESH_TOKEN>
     if (url.pathname === '/api/refresh' && request.method === 'POST') {
       if (!env.REFRESH_TOKEN || request.headers.get('Authorization') !== 'Bearer ' + env.REFRESH_TOKEN) return json({ error: 'unauthorized' }, 401, h);
-      try { return json({ ok: true, ...(await refresh(env, { onlyMissing: url.searchParams.get('missing') === '1' })) }, 200, h); } catch (e) { return json({ error: String(e.message || e) }, 500, h); }
+      try { return json({ ok: true, ...(await refresh(env, { onlyMissing: url.searchParams.get('missing') === '1', only: parseOnly(url.searchParams.get('cities')) })) }, 200, h); } catch (e) { return json({ error: String(e.message || e) }, 500, h); }
     }
     return json({ error: 'not_found' }, 404, h);
   },
