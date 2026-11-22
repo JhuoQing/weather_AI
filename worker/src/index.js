@@ -121,27 +121,45 @@ export function parseAll(text) {
   return Object.keys(out).length ? out : null;
 }
 
-async function askClaude(env, c) {
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({
-      model: env.MODEL || 'claude-haiku-5-5',
-      max_tokens: 1800,
-      system: SYSTEM,
-      messages: [{ role: 'user', content: '預報資料（JSON）：' + JSON.stringify(aiContext(c)) }]
-    })
-  });
-  if (!r.ok) throw new Error('claude_http_' + r.status);
-  const d = await r.json();
-  const text = (d.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
-  const out = parseAll(text);
-  if (!out) throw new Error('claude_bad_output');
-  return out;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// 遇到 429（太頻繁）或 5xx 時，等一下再試；總次數有上限，避免超過 Worker 的子請求數量限制
+async function askClaude(env, c, budget) {
+  let lastErr = 'claude_unknown';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (budget.left <= 0) throw new Error('claude_budget_exhausted');
+    budget.left--;
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: env.MODEL || 'claude-haiku-5-5',
+        max_tokens: 3000,
+        system: SYSTEM,
+        messages: [{ role: 'user', content: '預報資料（JSON）：' + JSON.stringify(aiContext(c)) }]
+      })
+    });
+    if (r.ok) {
+      const d = await r.json();
+      const text = (d.content || []).filter((b) => b.type === 'text').map((b) => b.text).join('');
+      const out = parseAll(text);
+      if (!out) throw new Error('claude_bad_output');
+      return out;
+    }
+    let detail = '';
+    try { const j = await r.json(); detail = (j && j.error && (j.error.message || j.error.type)) || ''; } catch (e) {}
+    lastErr = 'claude_http_' + r.status + (detail ? ':' + String(detail).slice(0, 80) : '');
+    if (r.status !== 429 && r.status < 500) throw new Error(lastErr); // 金鑰錯、模型名稱錯等，重試沒有用
+    const wait = Number(r.headers.get('retry-after'));
+    await sleep(Math.min(20000, Number.isFinite(wait) && wait > 0 ? wait * 1000 : 3000 * (attempt + 1)));
+  }
+  throw new Error(lastErr);
 }
 
 /* ---------- 定時更新 ---------- */
-export async function refresh(env) {
+// onlyMissing：只替還沒有 AI 建議的縣市補上，適合第一次部署後補跑
+export async function refresh(env, opts) {
+  const onlyMissing = !!(opts && opts.onlyMissing);
   if (!env.CWA_API_KEY) throw new Error('missing_CWA_API_KEY');
   const [l3, l7] = await Promise.all([fetchCwa(DATA_3DAY, env.CWA_API_KEY), fetchCwa(DATA_7DAY, env.CWA_API_KEY)]);
   const find = (list, n) => list.find((l) => l.LocationName === toCwa(n) || l.LocationName === n);
@@ -158,18 +176,23 @@ export async function refresh(env) {
   const snap = { updatedAt: new Date().toISOString(), aiUpdatedAt: prev.aiUpdatedAt || null, cities };
   await env.WX_KV.put('snapshot', JSON.stringify(snap)); // 先存天氣，AI 失敗也不影響天氣顯示
 
-  if (!env.ANTHROPIC_API_KEY) return { weather: Object.keys(cities).length, ai: 0 };
-  const names = Object.keys(cities);
+  if (!env.ANTHROPIC_API_KEY) return { weather: Object.keys(cities).length, ai: 0, errors: { missing_ANTHROPIC_API_KEY: 1 } };
+  const names = Object.keys(cities).filter((n) => !(onlyMissing && cities[n].ai));
+  const errors = {};
+  const budget = { left: 38 }; // Worker 單次執行的子請求上限（免費方案 50）
   let ok = 0, i = 0;
-  await Promise.all(Array.from({ length: 4 }, async () => {
+  await Promise.all(Array.from({ length: 2 }, async () => {
     while (i < names.length) {
       const n = names[i++];
-      try { cities[n].ai = await askClaude(env, cities[n]); ok++; } catch (e) { /* 沿用上一次 */ }
+      try { cities[n].ai = await askClaude(env, cities[n], budget); ok++; } catch (e) {
+        const k = String(e.message || e); errors[k] = (errors[k] || 0) + 1; // 沿用上一次的建議
+      }
     }
   }));
   if (ok) snap.aiUpdatedAt = new Date().toISOString();
   await env.WX_KV.put('snapshot', JSON.stringify(snap));
-  return { weather: names.length, ai: ok };
+  const withAi = Object.values(cities).filter((c) => c.ai).length;
+  return { weather: Object.keys(cities).length, ai: withAi, aiRefreshed: ok, errors };
 }
 
 /* ---------- API ---------- */
@@ -207,7 +230,7 @@ export default {
     // 部署後手動更新一次：POST /api/refresh，帶 Authorization: Bearer <REFRESH_TOKEN>
     if (url.pathname === '/api/refresh' && request.method === 'POST') {
       if (!env.REFRESH_TOKEN || request.headers.get('Authorization') !== 'Bearer ' + env.REFRESH_TOKEN) return json({ error: 'unauthorized' }, 401, h);
-      try { return json({ ok: true, ...(await refresh(env)) }, 200, h); } catch (e) { return json({ error: String(e.message || e) }, 500, h); }
+      try { return json({ ok: true, ...(await refresh(env, { onlyMissing: url.searchParams.get('missing') === '1' })) }, 200, h); } catch (e) { return json({ error: String(e.message || e) }, 500, h); }
     }
     return json({ error: 'not_found' }, 404, h);
   },
