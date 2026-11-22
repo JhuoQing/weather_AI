@@ -199,3 +199,43 @@ body.swap-in .now-icon { animation: icon-bounce .5s cubic-bezier(.3,1.4,.5,1) .1
   body.swap-out .now, body.swap-out .ai, body.swap-out .block { opacity: 1; transform: none; }
   body.swap-in .now, body.swap-in .ai, body.swap-in .block, body.swap-in .now-icon { animation: none; }
 }
+
+/* 一週詳細彈出視窗 */
+.day { font: inherit; color: inherit; text-align: center; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+.day:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--ink); }
+.day:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.day:focus-visible { outline: 3px dashed var(--ink); outline-offset: 3px; }
+body.modal-open { overflow: hidden; }
+.modal { position: fixed; inset: 0; z-index: 50; background: rgba(43,42,51,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal[hidden] { display: none; }
+.dialog { position: relative; width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto; background: #fff; border: 3px solid var(--ink); border-radius: 24px; box-shadow: 8px 8px 0 var(--ink); padding: 22px 22px 24px; animation: pop-in .25s ease both; }
+.dd-close { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--accent); border: 3px solid var(--ink); border-radius: 12px; box-shadow: 2px 2px 0 var(--ink); }
+.dd-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-right: 50px; }
+.dd-head h3 { margin: 0; font-size: 24px; font-weight: 900; }
+.dd-top { display: flex; align-items: center; gap: 14px; margin: 12px 0; }
+.dd-icon svg { display: block; width: 96px; height: 96px; }
+.dd-sky { font-size: 20px; font-weight: 900; }
+.dd-range { font-family: var(--num); font-size: 34px; font-weight: 700; line-height: 1.2; }
+.dd-stats { display: flex; gap: 8px; }
+.dd-stat { flex: 1; border: 2px solid var(--ink); border-radius: 12px; padding: 6px 10px; background: var(--yellow); }
+.dd-stat .k { font-size: 12px; font-weight: 900; }
+.dd-stat .v { font-size: 16px; font-weight: 900; }
+.dd-h { font-size: 15px; font-weight: 900; margin: 16px 0 6px; }
+.dd-tip { font-size: 14px; line-height: 1.6; padding: 6px 0; border-bottom: 1.5px dashed var(--ink); }
+.dd-row { display: grid; grid-template-columns: 46px 34px 44px 62px 1fr; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1.5px dashed #cfc7b0; font-size: 14px; font-weight: 700; }
+.dd-row .tm { font-family: var(--num); }
+.dd-row .ri svg { display: block; width: 30px; height: 30px; }
+.dd-row .tp { font-family: var(--num); font-size: 17px; font-weight: 700; }
+.dd-row .pp { font-size: 13px; }
+.dd-row .wt { font-size: 13px; font-weight: 500; }
+.dd-none { font-size: 14px; line-height: 1.6; }
+@media (max-width: 560px) {
+  .modal { align-items: flex-end; padding: 10px; }
+  .dialog { padding: 16px 16px 18px; border-radius: 20px; border-width: 2px; box-shadow: 5px 5px 0 var(--ink); max-height: 84vh; }
+  .dd-close { width: 36px; height: 36px; border-width: 2px; top: 10px; right: 10px; }
+  .dd-head h3 { font-size: 20px; }
+  .dd-icon svg { width: 72px; height: 72px; }
+  .dd-range { font-size: 28px; }
+  .dd-row { grid-template-columns: 42px 30px 40px 56px 1fr; gap: 6px; }
+}
+@media (prefers-reduced-motion: reduce) { .dialog { animation: none; } .day { transition: none; } }

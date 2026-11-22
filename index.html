@@ -77,6 +77,16 @@
   <footer class="foot">天氣資料：交通部中央氣象署開放資料。AI 建議僅供生活參考，出門前請以中央氣象署公布的預報與警特報為準。</footer>
 </div>
 
+<div class="modal" id="dayModal" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dayTitle">
+    <button class="dd-close" id="dayClose" type="button" aria-label="關閉">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M3 3 L15 15 M15 3 L3 15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+    </button>
+    <div class="dd-head"><h3 id="dayTitle"></h3><span class="tag" id="daySub"></span></div>
+    <div id="dayBody"></div>
+  </div>
+</div>
+
 <script src="config.js"></script>
 <script src="app.js"></script>
 </body>

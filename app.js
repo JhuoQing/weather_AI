@@ -123,7 +123,7 @@
       return {
         name: i === 0 ? '今天' : WD[new Date(p[0], p[1] - 1, p[2]).getDay()], date: p[1] + '/' + p[2],
         hi: d.hi == null ? null : Math.round(d.hi), lo: d.lo == null ? null : Math.round(d.lo),
-        pop: d.pop, uv: d.uv, kind: wxKind(d.wx, true)
+        pop: d.pop, uv: d.uv, hum: d.hum, iso: d.date, wxText: d.wx || null, kind: wxKind(d.wx, true)
       };
     });
     var today = days[0] || {};
@@ -138,7 +138,7 @@
       hum: pick(slots, 'hum', t0), uv: today.uv, wind: pick(slots, 'bf', t0),
       kind: wxKind(pick(slots, 'wx', t0), isDayHour(t0.slice(11, 16))),
       skyText: pick(slots, 'wx', t0) || '—',
-      hrs: hrs, days: days, ai: city.ai || null,
+      hrs: hrs, days: days, slots: slots, ai: city.ai || null,
       updated: upd, aiUpdated: ai
     };
   }
@@ -224,7 +224,9 @@
     var box = $('week'); box.textContent = '';
     var pa = ['#FFE9A8', '#CDE9FF', '#CFF5E0', '#E6DAFF', '#FFD3E3'];
     c.days.forEach(function (x, i) {
-      var d = el('div', 'day'); d.style.background = pa[i % 5];
+      var d = el('button', 'day'); d.type = 'button'; d.style.background = pa[i % 5];
+      d.setAttribute('aria-label', x.name + ' ' + x.date + '，查看詳細天氣');
+      d.addEventListener('click', function () { openDay(i); });
       d.appendChild(el('div', 'n', x.name));
       d.appendChild(el('div', 'dt', x.date));
       var ic = el('div'); ic.innerHTML = icon(x.kind); d.appendChild(ic);
@@ -306,6 +308,7 @@
 
   /* ---------- 主流程 ---------- */
   function loadCity(animate) {
+    closeDay();
     var city = CITIES[state.ci], idx = state.ci, body = document.body, t0 = Date.now();
     $('cityName').textContent = city[0]; $('regionName').textContent = REGIONS[city[1]];
     body.classList.remove('swap-in');
@@ -334,6 +337,71 @@
     });
   }
 
+  /* ---------- 一週詳細彈出視窗 ---------- */
+  var lastFocus = null;
+  function dayTips(x) {
+    var t = [];
+    if (x.pop != null) t.push(x.pop >= 60 ? '降雨機率偏高，出門記得帶傘。' : x.pop >= 30 ? '可能有短暫降雨，包包放把折疊傘比較安心。' : '降雨機率低，一般不用特別帶傘。');
+    if (x.uv != null && x.uv >= 6) t.push('紫外線偏強，中午前後外出建議防曬。');
+    if (x.hi != null && x.lo != null && x.hi - x.lo >= 8) t.push('日夜溫差大（約 ' + (x.hi - x.lo) + '°），帶件薄外套。');
+    if (x.hum != null && x.hum >= 85) t.push('濕度偏高，體感會比較悶。');
+    return t;
+  }
+  function openDay(i) {
+    var c = state.data; if (!c || !c.days[i]) return;
+    var x = c.days[i], body = $('dayBody');
+    lastFocus = document.activeElement;
+    $('dayTitle').textContent = x.name + ' ' + x.date;
+    $('daySub').textContent = c.name;
+    body.textContent = '';
+
+    var top = el('div', 'dd-top');
+    var ic = el('div', 'dd-icon'); ic.innerHTML = icon(x.kind); top.appendChild(ic);
+    var tx = el('div', 'dd-text');
+    tx.appendChild(el('div', 'dd-sky', x.wxText || '—'));
+    tx.appendChild(el('div', 'dd-range', val(x.hi, '°') + ' / ' + val(x.lo, '°')));
+    top.appendChild(tx); body.appendChild(top);
+
+    var st = el('div', 'dd-stats');
+    [['降雨機率', val(x.pop, '%')], ['濕度', val(x.hum, '%')], ['紫外線', x.uv == null ? '—' : x.uv + ' ' + uvText(x.uv)]].forEach(function (r) {
+      var b = el('div', 'dd-stat'); b.appendChild(el('div', 'k', r[0])); b.appendChild(el('div', 'v', r[1])); st.appendChild(b);
+    });
+    body.appendChild(st);
+
+    var tips = dayTips(x);
+    if (tips.length) {
+      var tb = el('div', 'dd-tips'); tb.appendChild(el('div', 'dd-h', '小提醒'));
+      tips.forEach(function (t) { tb.appendChild(el('div', 'dd-tip', t)); });
+      body.appendChild(tb);
+    }
+
+    var sl = (c.slots || []).filter(function (r) { return r.t.slice(0, 10) === x.iso && r.temp != null; });
+    var hb = el('div', 'dd-hours'); hb.appendChild(el('div', 'dd-h', '每 3 小時預報'));
+    if (sl.length) {
+      sl.forEach(function (r) {
+        var row = el('div', 'dd-row'), hm = r.t.slice(11, 16);
+        row.appendChild(el('span', 'tm', hm));
+        var ri = el('span', 'ri'); ri.innerHTML = icon(wxKind(r.wx, isDayHour(hm))); row.appendChild(ri);
+        row.appendChild(el('span', 'tp', Math.round(r.temp) + '°'));
+        row.appendChild(el('span', 'pp', '雨 ' + val(r.pop, '%')));
+        row.appendChild(el('span', 'wt', r.wx || ''));
+        hb.appendChild(row);
+      });
+    } else {
+      hb.appendChild(el('div', 'dd-none', '這一天比較遠，中央氣象署目前只提供整天的預報，沒有逐時資料。'));
+    }
+    body.appendChild(hb);
+
+    var m = $('dayModal'); m.hidden = false;
+    document.body.classList.add('modal-open');
+    $('dayClose').focus();
+  }
+  function closeDay() {
+    var m = $('dayModal'); if (m.hidden) return;
+    m.hidden = true; document.body.classList.remove('modal-open');
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
   function init() {
     var saved = load(KEY_CITY), found = -1;
     CITIES.forEach(function (c, i) { if (c[0] === saved) found = i; });
@@ -350,6 +418,9 @@
       var p = $('cityPanel');
       if (!p.hidden && !p.contains(e.target) && !$('cityBtn').contains(e.target)) openPanel(false);
     });
+    $('dayClose').addEventListener('click', closeDay);
+    $('dayModal').addEventListener('click', function (e) { if (e.target === $('dayModal')) closeDay(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDay(); });
     renderTabs();
     loadCity();
   }
