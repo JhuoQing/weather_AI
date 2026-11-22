@@ -181,7 +181,7 @@ export async function refresh(env, opts) {
   await env.WX_KV.put('snapshot', JSON.stringify(snap)); // 先存天氣，AI 失敗也不影響天氣顯示
 
   if (!env.ANTHROPIC_API_KEY) return { weather: Object.keys(cities).length, ai: 0, errors: { missing_ANTHROPIC_API_KEY: 1 } };
-  const names = Object.keys(cities).filter((n) => (!only || only.includes(n)) && !(onlyMissing && cities[n].ai));
+  const names = Object.keys(cities).filter((n) => (!only || only.includes(toCwa(n))) && !(onlyMissing && cities[n].ai));
   const errors = {};
   const budget = { left: 38 }; // Worker 單次執行的子請求上限（免費方案 50）
   let ok = 0, i = 0;
